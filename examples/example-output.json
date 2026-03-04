@@ -1,0 +1,35 @@
+{
+  "timestamp_ns": 1772649237846930478,
+  "request_id": "0b4d35f9-1630-456c-b9d9-d7e6df5fb29b",
+  "method": "POST",
+  "path": "/api/v1/resource",
+  "authority": "app.example.com",
+  "request_headers": [
+    [":authority", "app.example.com"],
+    [":method", "POST"],
+    [":path", "/api/v1/resource"],
+    [":scheme", "https"],
+    ["content-type", "application/json"],
+    ["authorization", "Bearer <token>"],
+    ["user-agent", "my-client/1.0"],
+    ["accept-encoding", "gzip"],
+    ["x-forwarded-for", "10.0.0.100"],
+    ["x-forwarded-proto", "https"],
+    ["x-envoy-external-address", "10.0.0.100"],
+    ["x-request-id", "0b4d35f9-1630-456c-b9d9-d7e6df5fb29b"],
+    ["x-envoy-decorator-operation", "my-app.my-namespace.svc.cluster.local:443/*"]
+  ],
+  "request_body": "{\"key\":\"value\",\"id\":\"c3cca794-a763-47a3-b747-ba1caf90e554\"}",
+  "response_headers": [
+    [":status", "200"],
+    ["server", "nginx"],
+    ["date", "Wed, 04 Mar 2026 18:33:57 GMT"],
+    ["content-type", "application/json"],
+    ["content-length", "27"]
+  ],
+  "response_body": "{\"status\":\"ok\",\"id\":\"abc123\"}",
+  "status_code": 200,
+  "duration_ms": 17,
+  "source_address": "10.0.0.100:53996",
+  "destination_address": "10.0.0.200:443"
+}

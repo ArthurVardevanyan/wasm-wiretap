@@ -1,0 +1,31 @@
+# ──────────────────────────────────────────────────────────────────────
+# Example: Attach wasm-wiretap to a specific workload (sidecar) instead
+# of a gateway, using label selectors.
+# ──────────────────────────────────────────────────────────────────────
+apiVersion: extensions.istio.io/v1alpha1
+kind: WasmPlugin
+metadata:
+  name: wasm-wiretap-sidecar
+  namespace: my-app
+spec:
+  # Match pods with this label in the same namespace.
+  selector:
+    matchLabels:
+      app: my-service
+
+  url: oci://ghcr.io/<you>/wasm-wiretap:latest
+  phase: STATS
+
+  pluginConfig:
+    backend: "loki"
+    upstream_cluster: "outbound|3100||loki.monitoring.svc.cluster.local"
+    upstream_authority: "loki.monitoring.svc.cluster.local"
+    upstream_port: 3100
+    service_name: "my-service"
+    capture_request_headers: true
+    capture_request_body: true
+    capture_response_headers: true
+    capture_response_body: true
+    max_body_bytes: 32768
+    labels:
+      env: "staging"

@@ -1,0 +1,60 @@
+# ──────────────────────────────────────────────────────────────────────
+# Example: Deploy wasm-wiretap with OpenTelemetry (OTLP/HTTP) backend
+# ──────────────────────────────────────────────────────────────────────
+#
+# Prerequisites:
+#   1. Build and push the OCI image containing the .wasm binary:
+#        docker build -t ghcr.io/<you>/wasm-wiretap:latest .
+#        docker push ghcr.io/<you>/wasm-wiretap:latest
+#
+#   2. An OTel Collector (or compatible endpoint like Grafana Alloy)
+#      must be reachable inside the mesh.
+# ──────────────────────────────────────────────────────────────────────
+
+---
+# ServiceEntry so Envoy knows how to reach the OTel Collector.
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: otel-collector
+  namespace: istio-system
+spec:
+  hosts:
+    - otel-collector.monitoring.svc.cluster.local
+  ports:
+    - number: 4318
+      name: otlp-http
+      protocol: HTTP
+  resolution: DNS
+  location: MESH_INTERNAL
+
+---
+apiVersion: extensions.istio.io/v1alpha1
+kind: WasmPlugin
+metadata:
+  name: wasm-wiretap
+  namespace: istio-system
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: my-gateway             # ← change to your Gateway name
+
+  url: oci://ghcr.io/<you>/wasm-wiretap:latest
+  phase: STATS
+
+  pluginConfig:
+    backend: "otlp"
+    upstream_cluster: "outbound|4318||otel-collector.monitoring.svc.cluster.local"
+    upstream_authority: "otel-collector.monitoring.svc.cluster.local"
+    upstream_port: 4318
+    upstream_path: "/v1/logs"
+    service_name: "my-gateway"
+    capture_request_headers: true
+    capture_request_body: true
+    capture_response_headers: true
+    capture_response_body: true
+    max_body_bytes: 65536
+    labels:
+      env: "production"
+      team: "platform"
