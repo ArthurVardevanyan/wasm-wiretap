@@ -4,8 +4,8 @@
 #
 # Prerequisites:
 #   1. Build and push the OCI image containing the .wasm binary:
-#        docker build -t ghcr.io/<you>/wasm-wiretap:latest .
-#        docker push ghcr.io/<you>/wasm-wiretap:latest
+#        podman build -t ghcr.io/<you>/wasm-wiretap:latest -f Containerfile .
+#        podman push ghcr.io/<you>/wasm-wiretap:latest
 #
 #   2. An OTel Collector (or compatible endpoint like Grafana Alloy)
 #      must be reachable inside the mesh.
@@ -38,7 +38,7 @@ spec:
   targetRefs:
     - group: gateway.networking.k8s.io
       kind: Gateway
-      name: my-gateway             # ← change to your Gateway name
+      name: my-gateway # ← change to your Gateway name
 
   url: oci://ghcr.io/<you>/wasm-wiretap:latest
   phase: STATS

@@ -1,28 +1,35 @@
 # ──────────────────────────────────────────────────────────────────────
-# Example: Deploy wasm-wiretap with Loki backend on an Istio gateway
+# Example: Deploy wasm-wiretap with VictoriaLogs backend
 # ──────────────────────────────────────────────────────────────────────
 #
-# Prerequisites:
-#   1. Build and push the OCI image containing the .wasm binary:
-#        podman build -t ghcr.io/<you>/wasm-wiretap:latest -f Containerfile .
-#        podman push ghcr.io/<you>/wasm-wiretap:latest
+# VictoriaLogs natively supports the Loki push API at a prefixed path:
+#   /insert/loki/api/v1/push
 #
-#   2. Make sure a Loki instance is reachable inside the mesh, e.g.
-#      via a ServiceEntry or a real Service.
+# It also supports OTLP/HTTP at:
+#   /insert/opentelemetry/v1/logs
+#
+# This example uses the Loki-compatible endpoint. To use OTLP instead,
+# change backend to "otlp" and upstream_path to
+# "/insert/opentelemetry/v1/logs".
+#
+# The _msg field required by VictoriaLogs is included in the log line
+# automatically by the plugin.
+#
+# Docs: https://docs.victoriametrics.com/victorialogs/data-ingestion/
 # ──────────────────────────────────────────────────────────────────────
 
 ---
-# ServiceEntry so Envoy knows how to reach Loki.
+# ServiceEntry so Envoy knows how to reach VictoriaLogs.
 apiVersion: networking.istio.io/v1
 kind: ServiceEntry
 metadata:
-  name: loki-external
+  name: victorialogs
   namespace: openshift-ingress
 spec:
   hosts:
-    - loki.monitoring.svc.cluster.local
+    - vlinsert-ingress-logs.openshift-ingress-logs.svc.cluster.local.
   ports:
-    - number: 3100
+    - number: 9481
       name: http
       protocol: HTTP
   resolution: DNS
@@ -39,10 +46,10 @@ spec:
   targetRefs:
     - group: gateway.networking.k8s.io
       kind: Gateway
-      name: https-gateway
+      name: https-gateway # ← change to your Gateway name
 
   # Where Istio pulls the .wasm binary from (OCI image).
-  url: oci://registry.arthurvardevanyan.com/homelab/wasm-wiretap@sha256:0c56fdc4f0da4e205db09cbd06ba9bd1034b1f06ccbae1aca7bb746eb999a86e
+  url: oci://registry.arthurvardevanyan.com/homelab/wasm-wiretap:latest
 
   # Phase – AUTHN runs early; STATS runs late.  For passive capture
   # we typically want STATS so we see final response codes.
@@ -52,10 +59,11 @@ spec:
   # JSON config forwarded to the plugin's on_configure().
   pluginConfig:
     backend: "loki"
-    upstream_cluster: "outbound|3100||loki.monitoring.svc.cluster.local"
-    upstream_authority: "loki.monitoring.svc.cluster.local"
-    upstream_port: 3100
-    upstream_path: "/loki/api/v1/push"
+    upstream_cluster: "outbound|9481||vlinsert-ingress-logs.openshift-ingress-logs.svc.cluster.local."
+    upstream_authority: "vlinsert-ingress-logs.openshift-ingress-logs.svc.cluster.local."
+    upstream_port: 9481
+    # VictoriaLogs Loki-compatible path (note the /insert prefix).
+    upstream_path: "/insert/loki/api/v1/push"
     service_name: "https-gateway"
     capture_request_headers: true
     capture_request_body: true

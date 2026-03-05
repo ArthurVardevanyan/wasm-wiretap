@@ -44,7 +44,23 @@ fn build_loki_payload(
         stream_labels.insert(k.as_str(), v.as_str());
     }
 
-    let log_line = serde_json::to_string(data).unwrap_or_default();
+    // Build a summary message for the _msg field (required by VictoriaLogs).
+    let msg = format!(
+        "{} {} {} → {}",
+        data.method, data.path, data.authority, data.status_code
+    );
+
+    // Serialize CapturedData to a JSON map, then inject _msg at the top
+    // level alongside all the existing fields (no nesting).
+    let mut log_map = serde_json::to_value(data)
+        .and_then(|v| match v {
+            serde_json::Value::Object(m) => Ok(m),
+            _ => Ok(serde_json::Map::new()),
+        })
+        .unwrap_or_default();
+    log_map.insert("_msg".to_string(), serde_json::Value::String(msg));
+
+    let log_line = serde_json::to_string(&log_map).unwrap_or_default();
     let ts = format!("{}", data.timestamp_ns);
 
     // Loki wants a map for "stream" and array-of-arrays for "values".

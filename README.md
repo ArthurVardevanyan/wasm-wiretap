@@ -21,7 +21,7 @@ Designed for use with **Istio's Gateway API** implementation via the `WasmPlugin
 ```text
 wasm-wiretap/
 ├── Cargo.toml
-├── Dockerfile              # Multi-stage: builds .wasm in OCI image
+├── Containerfile           # Multi-stage: builds .wasm in OCI image
 ├── Makefile
 ├── rust-toolchain.toml
 ├── src/
@@ -61,11 +61,11 @@ make build-debug    # debug
 make dist
 ```
 
-### Docker / OCI Image
+### Podman / OCI Image
 
 ```bash
-docker build -t ghcr.io/<you>/wasm-wiretap:latest .
-docker push ghcr.io/<you>/wasm-wiretap:latest
+podman build -t ghcr.io/<you>/wasm-wiretap:latest -f Containerfile .
+podman push ghcr.io/<you>/wasm-wiretap:latest
 ```
 
 The image contains a single file at `/plugin.wasm` – this is what Istio pulls.
