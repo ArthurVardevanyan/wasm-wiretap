@@ -1,4 +1,4 @@
-FROM rust:1.93.1-trixie AS builder
+FROM rust:1.95.0-trixie AS builder
 
 RUN rustup target add wasm32-wasip1
 
